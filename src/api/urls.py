@@ -1,11 +1,21 @@
-from rest_framework.routers import DefaultRouter
-from api.views.user_app import UserModeViewSet
+from api.views.terminal_view import TerminalView
+from django.contrib import admin
 from django.urls import path, include
-
-r = DefaultRouter()
-
-r.register(r'users', UserModeViewSet, basename='users')
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
+from api.views.user_app import RegisterView
 
 urlpatterns = [
-    path('', include(r.urls)),
+    path('terminal/',TerminalView.as_view()),
+
+    
+    # Auth yo'llari
+    path('api/auth/register/', RegisterView.as_view(), name='auth_register'),
+    path('api/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    
+    # # Terminal yo'li
+    # path('api/terminal/', include('apps.terminal.urls')),
 ]
