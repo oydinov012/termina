@@ -1,36 +1,173 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from apps.terminal.models import Workspace
-from api.serializer.terminal_serializer import TerminalSerializer
-from apps.utils.funksion import execute_command
+# views.py
+
 import os
 
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from apps.terminal.models import Workspace
+from api.serializer.terminal_serializer import (
+    TerminalSerializer,
+    NanoSaveSerializer
+)
+
+from apps.utils.funksion import TerminalEngine
+
+
+# ===================================================
+# TERMINAL
+# ===================================================
+
 class TerminalView(APIView):
-    # permission_classes = [IsAuthenticated]
+
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        print(request)
-        serializer = TerminalSerializer(data=request.data)
-        if serializer.is_valid():
-            command = serializer.validated_data.get('command', '')
-            
-            # Foydalanuvchi workspace'ini olish
-            try:
-                workspace = request.user.workspace
-            except Workspace.DoesNotExist:
-                return Response({"error": "Workspace topilmadi"}, status=404)
-            
-            # Buyruqni bajarish
-            output = execute_command(workspace, command)
-            
-            # Yon oyna (file tree) uchun fayllarni olish
-            # Bu yerda biz joriy papkadagi barcha fayllarni qaytaramiz
-            files_list = os.listdir(workspace.current_dir)
-            
+
+        serializer = TerminalSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        command = serializer.validated_data[
+            "command"
+        ]
+
+        workspace = request.user.workspace
+
+        engine = TerminalEngine(workspace)
+
+        result = engine.execute_command(command)
+
+        structure = os.listdir(
+            workspace.current_dir
+        )
+
+        return Response({
+
+            "result": result,
+
+            "current_path":
+                workspace.current_dir.replace(
+                    workspace.root_dir,
+                    "~"
+                ),
+
+            "structure": structure
+        })
+
+
+# ===================================================
+# NANO OPEN
+# ===================================================
+
+class NanoView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        path = request.GET.get("path")
+
+        workspace = request.user.workspace
+
+        abs_path = os.path.abspath(
+            os.path.join(
+                workspace.current_dir,
+                path
+            )
+        )
+
+        if not abs_path.startswith(
+            workspace.root_dir
+        ):
+
             return Response({
-                "output": output,
-                "current_path": workspace.current_dir.replace(workspace.root_dir, "~"),
-                "structure": files_list
-            })
-        return Response(serializer.errors, status=400)
+                "error": "Ruxsat yo'q"
+            }, status=403)
+
+        if not os.path.exists(abs_path):
+
+            open(abs_path, "w").close()
+
+        with open(
+            abs_path,
+            "r",
+            encoding="utf-8"
+        ) as f:
+
+            content = f.read()
+
+        return Response({
+
+            "path": path,
+
+            "content": content
+        })
+
+
+# ===================================================
+# NANO SAVE
+# ===================================================
+
+class NanoSaveView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        serializer = NanoSaveSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        path = serializer.validated_data["path"]
+
+        content = serializer.validated_data[
+            "content"
+        ]
+        print('path', path)
+        print('content', content)
+
+        workspace = request.user.workspace
+
+        abs_path = os.path.abspath(
+            os.path.join(
+                workspace.current_dir,
+                path
+            )
+        )
+
+        if not abs_path.startswith(
+            workspace.root_dir
+        ):
+
+            return Response({
+                "error": "Ruxsat yo'q"
+            }, status=403)
+
+        with open(
+            abs_path,
+            "w",
+            encoding="utf-8"
+        ) as f:
+
+            f.write(content)
+
+        return Response({
+
+            "message": "Saqlandi",
+
+            "return_path":
+                workspace.current_dir.replace(
+                    workspace.root_dir,
+                    "~"
+                )
+        })

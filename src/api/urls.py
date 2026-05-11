@@ -1,4 +1,4 @@
-from api.views.terminal_view import TerminalView
+from api.views.terminal_view import TerminalView, NanoView, NanoSaveView
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import (
@@ -9,6 +9,8 @@ from api.views.user_app import RegisterView
 
 urlpatterns = [
     path('terminal/',TerminalView.as_view()),
+    path('nano/',NanoView.as_view()),
+    path('nano/save/',NanoSaveView.as_view()),
 
     
     # Auth yo'llari
