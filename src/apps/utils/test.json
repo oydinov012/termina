@@ -1,0 +1,116 @@
+{
+  "L1_1": {
+    "hello.txt": "Salom dunyo"
+  },
+  "L1_2": {
+    "test/": {}
+  },
+  "L1_3": {
+    "project/": {
+      "a.txt": "birinchi fayl"
+    }
+  },
+  "L1_4": {
+    "a.txt": "A fayl ichidagi matn",
+    "b.txt": "B fayl ichidagi matn"
+  },
+  "L1_5": {
+    "docs/": {},
+    "readme.txt": "Bu loyiha haqida qisqacha ma'lumot"
+  }
+}
+
+
+{
+  "L2_1": {
+    "backend/": {
+      "app.py": "print('Hello Backend')",
+      "models.py": "class User: pass"
+    }
+  },
+  "L2_2": {
+    "frontend/": {
+      "index.html": "<h1>Home Page</h1>",
+      "style.css": "body { margin: 0; }"
+    }
+  },
+  "L2_3": {
+    "project/": {
+      "src/": {
+        "main.py": "print('Start app')"
+      }
+    }
+  },
+  "L2_4": {
+    "api/": {
+      "v1/": {
+        "users.py": "def get_users(): return []"
+      }
+    }
+  },
+  "L2_5": {
+    "backend/": {
+      "views.py": "# view functions"
+    },
+    "frontend/": {
+      "app.js": "console.log('frontend')"
+    }
+  }
+}
+{
+  "L3_1": {
+    "project/": {
+      "apps/": {
+        "user/": {
+          "models.py": "class User(models.Model): pass",
+          "views.py": "def user_view(request): pass"
+        }
+      },
+      "manage.py": "# Django entry"
+    }
+  },
+  "L3_2": {
+    "auth/": {
+      "service.py": "def login(): pass"
+    },
+    "payment/": {
+      "stripe.py": "def pay(): pass"
+    }
+  },
+  "L3_3": {
+    "config/": {
+      "settings.py": "DEBUG = True"
+    },
+    "core/": {
+      "engine.py": "class Engine: pass"
+    },
+    "utils/": {
+      "helpers.py": "def helper(): pass"
+    }
+  },
+  "L3_4": {
+    "backend/": {
+      "api/": {
+        "auth.py": "def auth(): pass",
+        "tasks.py": "def tasks(): pass"
+      }
+    },
+    "frontend/": {
+      "src/": {
+        "main.js": "console.log('app')"
+      }
+    }
+  },
+  "L3_5": {
+    "system/": {
+      "engine/": {
+        "core.py": "class CoreEngine: pass"
+      },
+      "modules/": {
+        "fs/": {
+          "file.py": "def read_file(): pass"
+        }
+      }
+    }
+  }
+}

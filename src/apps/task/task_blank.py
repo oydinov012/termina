@@ -57,7 +57,7 @@ TASK_BANK = {
                 "description": "har papkada file",
                 "structure": {
                     "folder1/": {
-                        "a.txt": None
+                        "a.txt": 'None'
                     },
                     "folder2/": {
                         "b.txt": None
@@ -69,3 +69,32 @@ TASK_BANK = {
         ]
     }
 }
+
+
+
+class TaskEngine:
+
+    @staticmethod
+    def generate(user):
+
+        profile, _ = Profile.objects.get_or_create(user=user)
+        level = profile.level
+
+        tasks = TaskTemplate.objects.filter(
+            level=level,
+            is_active=True
+        )
+
+        if not tasks.exists():
+            tasks = TaskTemplate.objects.filter(level=1)
+
+        task_template = random.choice(list(tasks))
+
+        return Task.objects.create(
+            user=user,
+            level=level,
+            title=task_template.title,
+            description=task_template.description,
+            target_structure=task_template.structure,
+            xp=task_template.xp
+        )
