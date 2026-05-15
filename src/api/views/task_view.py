@@ -73,8 +73,8 @@ from apps.task.tasks import (
 
 class TaskView(APIView):
 
-    permission_classes = [IsAuthenticated]
-
+    permission_classes = [IsAuthenticated, ]
+    
     def get(self, request):
 
         task = TaskEngine.generate(
@@ -148,7 +148,7 @@ class TaskView(APIView):
             task.save()
 
             return Response({
-                "status": "correct ✔",
+                "status": "correct ✔ ",
                 "xp": request.user.profile.xp,
                 "level": request.user.profile.level
             })

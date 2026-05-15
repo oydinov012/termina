@@ -1,12 +1,11 @@
 from api.views.terminal_view import TerminalView, NanoView, NanoSaveView
 from api.views.task_view import TaskView
-from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-from api.views.user_app import RegisterView
+from api.views.user_app import RegisterView, ProfileListView ,ProfileUpdateDeleteView
 
 urlpatterns = [
     path('terminal/',TerminalView.as_view()),
@@ -19,6 +18,8 @@ urlpatterns = [
     path('api/auth/register/', RegisterView.as_view(), name='auth_register'),
     path('api/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/profile/',ProfileListView.as_view() ),
+    path('api/profile1/<int:pk>/',ProfileUpdateDeleteView.as_view() ),
     
     # # Terminal yo'li
     # path('api/terminal/', include('apps.terminal.urls')),
