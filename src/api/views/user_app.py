@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken 
 from django.contrib.auth import get_user_model
-from api.serializer.user_app import RegisterSerializer, UserSerializer
-from apps.task.models import Profile  # Agar model kerak bo'lsa
+from api.serializer.user_app import RegisterSerializer, UserSerializer, ProfilSerailizer
+from apps.task.models import Profile
 
 User = get_user_model()
 
@@ -32,12 +32,11 @@ class RegisterView(generics.CreateAPIView):
 
 class ProfileListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = UserSerializer
+    serializer_class = ProfilSerailizer
 
     def get_queryset(self):
-        # TO'G'RILANDI: request.id o'rniga request.user.id yozildi.
-        # Faqat o'ziga tegishli User ma'lumotini ko'radi
-        return User.objects.filter(id=self.request.user.id)
+        
+        return Profile.objects.filter(user=self.request.user)
 
 
 class ProfileUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):

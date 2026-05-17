@@ -1,4 +1,4 @@
-from api.views.terminal_view import TerminalView, NanoView, NanoSaveView
+from api.views.terminal_view import TerminalView
 from api.views.task_view import TaskView
 from django.urls import path, include
 from rest_framework_simplejwt.views import (
@@ -9,8 +9,6 @@ from api.views.user_app import RegisterView, ProfileListView ,ProfileUpdateDelet
 
 urlpatterns = [
     path('terminal/',TerminalView.as_view()),
-    path('nano/',NanoView.as_view()),
-    path('nano/save/',NanoSaveView.as_view()),
     path('task/', TaskView.as_view()),
 
     

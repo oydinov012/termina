@@ -39,11 +39,13 @@ INSTALLED_APPS = [
     'apps.terminal',
     'apps.task',
     'drf_spectacular',
+    "corsheaders",
     
     'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -108,6 +110,14 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '10/minute',
+        'user': '20/minute',  # Foydalanuvchi daqiqasiga 30 tadan ko'p buyruq bera olmaydi
+    }
 
 }
 
@@ -192,7 +202,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # AUTH_USER_MODEL = "users.User"
 
+# config/settings.py
 
+# # Celery sozlamalari
+# CELERY_BROKER_URL = 'redis://127.0.0.1:6327/0'  # Redis server manzili va porti
+# CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6327/0' # Natijalarni saqlash joyi
+# CELERY_ACCEPT_CONTENT = ['json']
+# CELERY_TASK_SERIALIZER = 'json'
+# CELERY_RESULT_SERIALIZER = 'json'
+# CELERY_TIMEZONE = 'Asia/Tashkent' # O'zbekiston vaqti
 
 CORS_ALLOWED_ORIGINS = [o.strip() for o in env("CORS_ALLOWED_ORIGINS").split(",")]
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in env("CSRF_TRUSTED_ORIGINS").split(",")]

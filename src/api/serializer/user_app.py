@@ -27,4 +27,11 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'password', 'first_name', 'last_name','email')
+
+
+class  ProfilSerailizer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Profile
+        fields = ("level","xp","success_streak","failed_attempts","total_completed_tasks","created_at","updated_at")
          
