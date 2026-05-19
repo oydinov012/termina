@@ -3,6 +3,7 @@ import re
 import shutil
 from apps.task.tasks import TaskChecker, ProgressManager
 from apps.task.models import Task
+from apps.utils.tasks import async_check_task
 
 class TerminalEngine:
 
@@ -95,35 +96,32 @@ class TerminalEngine:
                     "file_path": folder_name
                 }
 
-            # ====================================
-            # CHECK (Taskni tekshirish)
-            # ====================================
+            
             elif cmd == "check":
+                # Foydalanuvchining faol topshirig'ini topamiz
                 task = Task.objects.filter(user=self.user, status="in_progress").first()
                 if not task:
                     return self.error("Hozirda hech qanday faol topshiriq bajarilmayapti. Avval 'start <task_id>' qiling.")
 
-                # Papka yo'lini bazadan emas, task.id orqali shu yerning o'zida qayta tiklaymiz
+                # Papka yo'lini aniqlaymiz
                 expected_folder_name = f"task_{task.id}_papkasi"
                 calculated_workspace_path = os.path.join(self.workspace.root_dir, expected_folder_name)
 
-                # TaskChecker-ga bazadagi maydonni emas, o'zimiz hisoblagan yo'lni beramiz
-                is_success = TaskChecker.check(calculated_workspace_path, task)
+                # -------------------------------------------------------------
+                # CELERY TASKNI ORQA FONGA YUBORISH
+                # -------------------------------------------------------------
+                # .delay() orqali vazifa Celery Worker-ga topshiriladi. Django esa qotmasdan yo'lida davom etadi.
+                async_check_task.delay(self.user.id, task.id, calculated_workspace_path)
+                # -------------------------------------------------------------
 
-                ProgressManager.update(self.user, task, is_success)
+                # Foydalanuvchini root papkaga qaytarib tursak ham bo'ladi (ixtiyoriy)
+                self.workspace.current_dir = self.workspace.root_dir
+                self.workspace.save()
 
-                if is_success:
-                    self.workspace.current_dir = self.workspace.root_dir
-                    self.workspace.save()
-                    return {
-                        "type": "check_success",
-                        "output": f"Barakalla! Topshiriq to'g'ri bajarildi. Sizga {task.xp} XP berildi va siz asosiy papkaga qaytdingiz."
-                    }
-                else:
-                    return {
-                        "type": "check_failed",
-                        "output": "Xatolik! Topshiriq shartlari to'liq yoki to'g'ri bajarilmadi. Fayllarni qaytadan tekshirib ko'ring."
-                    }
+                return {
+                    "type": "check_queued",
+                    "output": "Topshiriq tekshirishga topshirildi! Natijani birozdan so'ng profil hisobingizda yoki qayta 'check' qilib ko'rishingiz mumkin."
+                }
             # ====================================
             # PWD
             # ====================================
@@ -156,6 +154,9 @@ class TerminalEngine:
             # MKDIR
             # ====================================
             elif cmd == "mkdir":
+                current_items = len(os.listdir(self.workspace.current_dir))
+                if current_items >= 20:  # bitta papka ichida ko'pi bilan 20 ta element
+                    return self.error("Siz ajratilgan limitdan ko'p obyekt yarata olmaysiz!")
                 if not args:
                     return self.error("Papka nomi yozilmadi")
 

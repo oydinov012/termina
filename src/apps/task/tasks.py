@@ -169,20 +169,3 @@ class TaskFormatter:
 
 
 # apps/terminal/tasks.py (yoki sizning appingiz yo'li)
-
-from celery import shared_task
-
-@shared_task
-def async_check_task(user_id, task_id, workspace_path):
-    try:
-        task = Task.objects.get(id=task_id, user_id=user_id)
-        # Og'ir tekshirish jarayoni orqa fonda ketadi
-        is_success = TaskChecker.check(workspace_path, task)
-        
-        # Diqqat: ProgressManager bazani yangilaydi
-        ProgressManager.update(task.user, task, is_success)
-        
-        return f"Task {task_id} tekshirildi. Natija: {is_success}"
-    except Exception as e:
-        return f"Xatolik: {str(e)}"
-

@@ -202,15 +202,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # AUTH_USER_MODEL = "users.User"
 
-# config/settings.py
+# Celery va Redis sozlamalari (.env fayldan o'qiladi)
+REDIS_HOST = env('REDIS_HOST', default='127.0.0.1')
+REDIS_PORT = env('REDIS_PORT', default='6379')
+REDIS_PASSWORD = env('REDIS_PASSWORD', default='')
 
-# # Celery sozlamalari
-# CELERY_BROKER_URL = 'redis://127.0.0.1:6327/0'  # Redis server manzili va porti
-# CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6327/0' # Natijalarni saqlash joyi
-# CELERY_ACCEPT_CONTENT = ['json']
-# CELERY_TASK_SERIALIZER = 'json'
-# CELERY_RESULT_SERIALIZER = 'json'
-# CELERY_TIMEZONE = 'Asia/Tashkent' # O'zbekiston vaqti
+# URL formatini yig'amiz
+CELERY_BROKER_URL = f'redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0'
+CELERY_RESULT_BACKEND = f'redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0'
+
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Tashkent'
 
 CORS_ALLOWED_ORIGINS = [o.strip() for o in env("CORS_ALLOWED_ORIGINS").split(",")]
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in env("CSRF_TRUSTED_ORIGINS").split(",")]
