@@ -11,14 +11,14 @@ urlpatterns = [
     path('terminal/',TerminalView.as_view()),
     path('task/', TaskView.as_view()),
 
+    path('api/auth/register/', RegisterView.as_view(), name='auth_register'),
     
     # Auth yo'llari
-    path('api/auth/register/', RegisterView.as_view(), name='auth_register'),
     path('api/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
     path('api/profile/',ProfileListView.as_view() ),
     path('api/profile1/<int:pk>/',ProfileUpdateDeleteView.as_view() ),
     
-    # # Terminal yo'li
-    # path('api/terminal/', include('apps.terminal.urls')),
+    
 ]
