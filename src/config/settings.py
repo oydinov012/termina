@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'apps.task',
     'drf_spectacular',
     "corsheaders",
+    "rest_framework",
     
     'rest_framework_simplejwt',
 ]

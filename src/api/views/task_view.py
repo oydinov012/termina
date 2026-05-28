@@ -12,6 +12,37 @@ class TaskView(APIView):
 
     permission_classes = [IsAuthenticated, ]
     
+    from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import serializers
+from drf_spectacular.utils import extend_schema, inline_serializer
+
+# Siz yozgan serializer
+from api.serializer.task_serializer import TaskCheckSerializer
+
+class TaskView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Foydalanuvchiga topshiriqni yuklash",
+        responses={
+            200: inline_serializer(
+                name='TaskRetrieveResponse',
+                fields={
+                    'task_id': serializers.IntegerField(),
+                    'title': serializers.CharField(),
+                    'description': serializers.CharField(),
+                    'level': serializers.IntegerField(),
+                    'xp': serializers.IntegerField(),
+                    'status': serializers.CharField(),
+                    'structure': serializers.DictField(), 
+                    'formatted_structure': serializers.CharField(),
+                }
+            )
+        },
+        tags=['task']
+    )
     def get(self, request):
 
         task = TaskEngine.generate(
@@ -60,6 +91,20 @@ class TaskView(APIView):
                 task.template.categories.all()
             ]
         })
+    @extend_schema(
+        summary="Yaratilgan fayllar strukturasini tekshirish",
+        request=TaskCheckSerializer,
+        responses={
+            200: inline_serializer(
+                name='TaskCheckResponse',
+                fields={
+                    'status': serializers.CharField(),
+                    'message': serializers.CharField(),
+                }
+            )
+        },
+        tags=['task']
+    )
     def post(self, request):
 
         serializer = TaskCheckSerializer(data=request.data)
