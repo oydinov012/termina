@@ -46,6 +46,7 @@ class TerminalView(APIView):
     )
     def post(self, request):
         workspace = request.user.workspace
+        # print(workspase)
         engine = TerminalEngine(workspace)
         result = {}
 
@@ -84,6 +85,7 @@ class TerminalView(APIView):
             
             path = serializer.validated_data["path"]
             content_to_write = serializer.validated_data["content"]
+            print(content_to_write)
             abs_path = engine.safe_path(path)
             
             try:

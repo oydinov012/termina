@@ -153,18 +153,29 @@ class TerminalEngine:
             # ====================================
             # MKDIR
             # ====================================
+            # ====================================
+            # MKDIR
+            # ====================================
             elif cmd == "mkdir":
                 current_items = len(os.listdir(self.workspace.current_dir))
                 if current_items >= 20:  # bitta papka ichida ko'pi bilan 20 ta element
                     return self.error("Siz ajratilgan limitdan ko'p obyekt yarata olmaysiz!")
+                
+                # 1. Birinchi navbatda argument borligini tekshiramiz
                 if not args:
                     return self.error("Papka nomi yozilmadi")
 
+                # 2. Endi xavfsiz yo'lni olamiz va 'path' o'zgaruvchisini yaratamiz
                 path = self.safe_path(args[0])
+
+                # 3. 'path' yaratilgandan keyingina uning mavjudligini tekshiramiz
+                if os.path.exists(path):
+                    return self.error(f"mkdir: '{args[0]}' papkasini yaratib bo'lmadi: Fayl yoki papka allaqachon mavjud.")
+
+                # 4. Hammasi joyida bo'lsa, papkani yaratamiz
                 os.mkdir(path)
 
                 return self.success(f"Papka yaratildi: {args[0]}")
-
             # ====================================
             # TOUCH
             # ====================================

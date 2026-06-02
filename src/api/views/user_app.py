@@ -38,23 +38,20 @@ class ProfileListView(generics.ListAPIView):
         
         return Profile.objects.filter(user=self.request.user)
 
-
 class ProfileUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
 
-    def get_queryset(self):
-        return User.objects.all()
-
+    # Token egasini avtomatik qaytaradi (URL da ID ko'rsatish shart emas)
     def get_object(self):
         return self.request.user
-    
-    def delete(self, request, *args, **kwargs):
-        super().delete(request, *args, **kwargs)
 
+    # O'chirish qismini to'g'ri qayta yozamiz
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance) # Obyektni o'chiramiz
+        
         return Response(
-            {
-                "message":"user deleted! "
-            }
+            {"detail": "Foydalanuvchi hisobi muvaffaqiyatli o'chirildi!"},
+            status=status.HTTP_200_OK # 204 o'rniga 200 qaytaramiz, shunda JSON frontendga yetib boradi
         )
-    

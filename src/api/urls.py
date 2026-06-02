@@ -18,7 +18,7 @@ urlpatterns = [
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     path('api/profile/',ProfileListView.as_view() ),
-    path('api/profile1/<int:pk>/',ProfileUpdateDeleteView.as_view() ),
+    path('api/profile1/',ProfileUpdateDeleteView.as_view() ),
     
     
 ]
