@@ -36,7 +36,7 @@ class ProfileListView(generics.ListAPIView):
 
     def get_queryset(self):
         
-        return Profile.objects.filter(user=self.request.user)
+        return Profile.objects.get(user=self.request.user)
 
 class ProfileUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
