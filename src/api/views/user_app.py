@@ -1,5 +1,3 @@
-from tokenize import TokenError
-from rest_framework.views import APIView
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -20,6 +18,9 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save() 
 
+        # 🟢 TO'G'RILANDI: Ro'yxatdan o'tishi bilan unga avtomatik bo'sh profil ochiladi
+        Profile.objects.get_or_create(user=user)
+
         refresh = RefreshToken.for_user(user)
 
         return Response({
@@ -35,23 +36,21 @@ class ProfileListView(generics.ListAPIView):
     serializer_class = ProfilSerailizer
 
     def get_queryset(self):
-        
-        return Profile.objects.get(user=self.request.user)
+        # 🔴 JIDDIY XATO TUZATILDI: .get() o'rniga .filter() bo'lishi shart!
+        # Chunki ListAPIView massiv ko'rinishida ma'lumot kutadi.
+        return Profile.objects.filter(user=self.request.user)
 
 class ProfileUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
 
-    # Token egasini avtomatik qaytaradi (URL da ID ko'rsatish shart emas)
     def get_object(self):
         return self.request.user
 
-    # O'chirish qismini to'g'ri qayta yozamiz
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        self.perform_destroy(instance) # Obyektni o'chiramiz
-        
+        self.perform_destroy(instance)
         return Response(
             {"detail": "Foydalanuvchi hisobi muvaffaqiyatli o'chirildi!"},
-            status=status.HTTP_200_OK # 204 o'rniga 200 qaytaramiz, shunda JSON frontendga yetib boradi
+            status=status.HTTP_200_OK
         )

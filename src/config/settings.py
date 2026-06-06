@@ -22,8 +22,8 @@ else:
     DEBUG = True
 
 
-ALLOWED_HOSTS = env("ALLOWED_HOSTS").split(",")
-
+# ALLOWED_HOSTS = env("ALLOWED_HOSTS").split(",")
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
