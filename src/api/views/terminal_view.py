@@ -46,37 +46,60 @@ class TerminalView(APIView):
     )
     def post(self, request):
         workspace = request.user.workspace
-        # print(workspase)
         engine = TerminalEngine(workspace)
         result = {}
 
         # YAML schemaga muvofiq discriminator 'type' maydonini olamiz
         request_type = request.data.get("type", None)
 
-        # 1-HOLAT: Oddiy buyruq (ls, cd, mkdir) yoki nano yordamida faylni ochish
+        # 1-HOLAT: Oddiy buyruq (ls, cd, mkdir, help) yoki nano yordamida faylni ochish
         if request_type == "regular_command" or "command" in request.data:
             serializer = TerminalSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            command = serializer.validated_data["command"]
             
-            # Terminal engineda buyruqni bajaramiz
-            result = engine.execute_command(command)
+            # .strip() orqali ortiqcha bo'shliqlarni tozalaymiz
+            command = serializer.validated_data["command"].strip()
             
-            # Agar bajarilgan buyruq nano bo'lsa, faylni o'qib kontentini qaytaramiz
-            if result.get("type") == "nano":
-                path = result.get("file_path", "")
-                abs_path = engine.safe_path(path)
+            # 🔥 TUZATILDI: Avval 'help' ekanligini tekshiramiz, aks holda engine'ga yuboramiz
+            if command.lower() == 'help':
+                from django.conf import settings
+                print("help")
+                html_path = os.path.join(settings.BASE_DIR, 'templates', 'terminal_help.html')
                 
-                current_content = ""
-                if os.path.isfile(abs_path):
-                    try:
-                        with open(abs_path, "r", encoding="utf-8") as f:
-                            current_content = f.read()
-                    except Exception:
-                        current_content = "Faylni o'qib bo'lmadi."
+                html_content = ""
+                if os.path.exists(html_path):
+                    with open(html_path, 'r', encoding='utf-8') as f:
+                        html_content = f.read()
+                else:
+                    html_content = "<div style='color:red;'>Qo'llanma fayli topilmadi.</div>"
                 
-                result["content"] = current_content
-                result["status"] = "Fayl muvaffaqiyatli ochildi"
+                result = {
+                    "type": "html_help",
+                    "file_path": None,
+                    "content": html_content,
+                    "status": "success",
+                    "output": html_content
+                }
+            
+            else:
+                # Agar help bo'lmasa, har doimgidek TerminalEngine buyruqni bajaradi
+                result = engine.execute_command(command)
+                
+                # Agar bajarilgan buyruq nano bo'lsa, faylni o'qib kontentini qaytaramiz
+                if result.get("type") == "nano":
+                    path = result.get("file_path", "")
+                    abs_path = engine.safe_path(path)
+                    
+                    current_content = ""
+                    if os.path.isfile(abs_path):
+                        try:
+                            with open(abs_path, "r", encoding="utf-8") as f:
+                                current_content = f.read()
+                        except Exception:
+                            current_content = "Faylni o'qib bo'lmadi."
+                    
+                    result["content"] = current_content
+                    result["status"] = "Fayl muvaffaqiyatli ochildi"
 
         # 2-HOLAT: Nano muharriri ichida faylni saqlash (Ctrl+O bosilganda)
         elif request_type == "nano_save" or ("path" in request.data and "content" in request.data):
@@ -85,11 +108,9 @@ class TerminalView(APIView):
             
             path = serializer.validated_data["path"]
             content_to_write = serializer.validated_data["content"]
-            print(content_to_write)
             abs_path = engine.safe_path(path)
             
             try:
-                # Faylga yozish jarayoni
                 with open(abs_path, "w", encoding="utf-8") as f:
                     f.write(content_to_write)
                 
@@ -114,7 +135,6 @@ class TerminalView(APIView):
                 status=400
             )
 
-        # Skrinshotdagi o'ng tomondagi "Siz yaratgan joriy fayllar strukturasi" uchun:
         try:
             structure = os.listdir(workspace.current_dir)
         except Exception:

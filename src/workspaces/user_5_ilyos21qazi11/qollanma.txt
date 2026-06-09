@@ -1,0 +1,4 @@
+rejalar
+1-task ceckni qayta korib chiqish
+2-help sorov natijalarini boyitish , tizim haqida batafsil malumot berish
+3- serverga deploy
