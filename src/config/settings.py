@@ -34,15 +34,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'apps.users',
-    'apps.utils',
-    'apps.terminal',
-    'apps.task',
     'drf_spectacular',
     "corsheaders",
     "rest_framework",
     
     'rest_framework_simplejwt',
+    'import_export',
+
+    # my apps
+    'apps.users',
+    'apps.utils',
+    'apps.terminal',
+    'apps.task',
 ]
 
 MIDDLEWARE = [

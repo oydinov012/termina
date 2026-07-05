@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator 
 
 
 # =========================
@@ -134,8 +135,8 @@ class TaskTemplate(models.Model):
         default="easy"
     )
 
-    xp = models.PositiveIntegerField(
-        default=1
+    xp = models.IntegerField(
+        default=1, validators=[MinValueValidator(1)]
     )
 
     time_limit = models.PositiveIntegerField(
