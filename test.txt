@@ -1,0 +1,75 @@
+services:
+  # ----------------------------------------------------------------------------
+  # Postgres malmotlar bazasi
+  # ---------------------------------------------------
+    db:
+      image: postgres:16-alpine
+      container_name: terminal_postgres
+      environment:
+        POSTGRES_DB: terminal_db
+        POSTGRES_USER: terminal_user
+        POSTGRES_PASSWORD: Oydinov012.. # Baza uchun yangi parol
+      volumes:
+          - postgres_data:/var/lib/postgresql/data
+      restart: always
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U terminal_user -d terminal_db"]
+        interval: 5s
+        timeout: 5s
+        retries: 5
+ # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7.2-alpine
+    container_name: terminal_redis
+    # Quyidagi qatorga o'zingizning .env faylingizdagi maxfiy parolni yozing:
+    command: redis-server --appendonly yes --requirepass Oydinov012..
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "Oydinov012..", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+  # ----------------------------------------------------------------------------
+  # WEB: Django API xizmati
+  # ----------------------------------------------------------------------------
+  web:
+    build: .
+    container_name: terminal_django_web
+    command: sh -c "python manage.py collectstatic --noinput && python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+    volumes:
+      - ./src:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - ./src/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+  # ----------------------------------------------------------------------------
+  # CELERY: Fon rejimidagi ishchi (Worker)
+  # ----------------------------------------------------------------------------
+  celery:
+    build: .
+    container_name: terminal_celery_worker
+    command: celery -A config worker --loglevel=info
+    volumes:
+      - ./src:/app
+    env_file:
+      - ./src/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+volumes:
+  redis_data:
+  static_volume:
+  media_volume:

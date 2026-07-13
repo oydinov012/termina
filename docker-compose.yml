@@ -1,25 +1,35 @@
 services:
-  # ----------------------------------------------------------------------------
-  # REDIS: Xabarlar brokeri
-  # ----------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: terminal_postgres
+    environment:
+      POSTGRES_DB: terminal_db
+      POSTGRES_USER: terminal_user
+      POSTGRES_PASSWORD: Oydinov012..
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U terminal_user -d terminal_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   redis:
     image: redis:7.2-alpine
     container_name: terminal_redis
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass Oydinov012..
     ports:
       - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     restart: always
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "Oydinov012..", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
 
-  # ----------------------------------------------------------------------------
-  # WEB: Django API xizmati
-  # ----------------------------------------------------------------------------
   web:
     build: .
     container_name: terminal_django_web
@@ -35,11 +45,10 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      db:
+        condition: service_healthy
     restart: always
 
-  # ----------------------------------------------------------------------------
-  # CELERY: Fon rejimidagi ishchi (Worker)
-  # ----------------------------------------------------------------------------
   celery:
     build: .
     container_name: terminal_celery_worker
@@ -51,9 +60,12 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      db:
+        condition: service_healthy
     restart: always
 
 volumes:
   redis_data:
   static_volume:
   media_volume:
+  postgres_data:
