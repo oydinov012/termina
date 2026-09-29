@@ -1,4 +1,0 @@
-salom
-
-
-salomlar

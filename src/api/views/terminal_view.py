@@ -1,3 +1,4 @@
+from django.conf import settings
 import os
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -62,7 +63,6 @@ class TerminalView(APIView):
             
             # 🔥 TUZATILDI: Avval 'help' ekanligini tekshiramiz, aks holda engine'ga yuboramiz
             if command.lower() == 'help':
-                from django.conf import settings
                 print("help")
                 html_path = os.path.join(settings.BASE_DIR, 'templates', 'terminal_help.html')
                 
