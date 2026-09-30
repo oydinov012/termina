@@ -1,38 +1,36 @@
-from django.http import JsonResponse
-from django.views import View
+
+
 from celery.result import AsyncResult
+from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from apps.task.models import Task
 
 
+class CeleryTaskStatusView(APIView):
+    permission_classes = [IsAuthenticated]
 
-class CeleryTaskStatusView(View):
-    def get(self, request, task_id, *args, **kwargs):
+    def get(self, request, task_id):
+        # Faqat shu foydalanuvchining topshirig'i. Boshqasining ID si bo'lsa, 404 qaytadi.
+        task = get_object_or_404(
+            Task, check_job_id=task_id, user=request.user
+        )
+
         result = AsyncResult(task_id)
-        
-        response_data = {
+        data = {
             "task_id": task_id,
-            "status": result.status, 
+            "status": result.status,
         }
 
         if result.ready():
-            response_data["result"] = str(result.result)
-            
-            # 🔥 Agar request.user bo'sh bo'lsa, joriy sessiyadagi oxirgi task orqali foydalanuvchini topamiz
-            user = request.user if request.user.is_authenticated else None
-            
-            # Agar requestda aniqlanmasa, Celery yangilagan oxirgi task egasini qidiramiz
-            last_task = None
-            if user:
-                last_task = Task.objects.filter(user=user).last()
-            else:
-                # Task modelidan oxirgi in_progress bo'lmagan topshiriq egasini olish
-                last_task = Task.objects.filter(status__in=["completed", "failed"]).last()
-                if last_task:
-                    user = last_task.user
+            profile = request.user.profile
+            data.update({
+                "task_status": task.status,
+                "xp": profile.xp,
+                "level": profile.level,
+                "streak": profile.success_streak,
+            })
 
-            if last_task and user:
-                response_data["task_status"] = last_task.status
-                response_data["xp"] = user.profile.xp
-                response_data["streak"] = user.profile.success_streak
-
-        return JsonResponse(response_data)
+        return Response(data)

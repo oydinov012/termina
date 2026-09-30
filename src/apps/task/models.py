@@ -175,9 +175,9 @@ class TaskTemplate(models.Model):
 # =========================
 
 class Task(models.Model):
-
     STATUS_CHOICES = (
         ("pending", "Pending"),
+        ("in_progress", "In progress"),
         ("completed", "Completed"),
         ("failed", "Failed"),
     )
@@ -234,6 +234,13 @@ class Task(models.Model):
         null=True,
         help_text="Seconds"
     )
+    check_job_id = models.CharField(
+    max_length=64,
+    blank=True,
+    null=True,
+    db_index=True,
+    help_text="Celery tekshiruv vazifasi ID si"
+)
 
     class Meta:
 

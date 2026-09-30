@@ -4,22 +4,13 @@ from rest_framework.response import Response
 
 from apps.task.models import Task
 from api.serializer.task_serializer import TaskCheckSerializer
+import os
+from django.shortcuts import get_object_or_404
+from rest_framework import serializers
+from drf_spectacular.utils import extend_schema, inline_serializer
 from apps.task.tasks import TaskChecker, TaskEngine, ProgressManager, TaskFormatter
 
 
-
-class TaskView(APIView):
-
-    permission_classes = [IsAuthenticated, ]
-    
-    from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import serializers
-from drf_spectacular.utils import extend_schema, inline_serializer
-
-# Siz yozgan serializer
-from api.serializer.task_serializer import TaskCheckSerializer
 
 class TaskView(APIView):
     permission_classes = [IsAuthenticated]
@@ -106,36 +97,46 @@ class TaskView(APIView):
         tags=['task']
     )
     def post(self, request):
-
         serializer = TaskCheckSerializer(data=request.data)
-
         serializer.is_valid(raise_exception=True)
 
-        task = Task.objects.get(
+        # Boshqa foydalanuvchining taski yoki mavjud bo'lmagan ID uchun 404 qaytadi
+        task = get_object_or_404(
+            Task,
             id=serializer.validated_data["task_id"],
-            user=request.user
+            user=request.user,
         )
-        print(task)
-        print(serializer)
 
+        if task.status == "completed":
+            return Response(
+                {"status": "already_completed", "message": "Bu topshiriq allaqachon bajarilgan."}
+            )
+
+        # Terminaldagi `start` buyrug'i yaratgan papka bilan bir xil yo'l
         workspace = request.user.workspace
+        task_dir = os.path.join(workspace.root_dir, f"task_{task.id}_papkasi")
 
-        result = TaskChecker.check(workspace, task)
-        print(result)
-        ProgressManager.update(request.user, task, result)
+        if not os.path.isdir(task_dir):
+            return Response(
+                {
+                    "status": "error",
+                    "message": "Avval terminalda `start <task_id>` buyrug'ini bajaring.",
+                },
+                status=400,
+            )
 
-        if result:
+        success = TaskChecker.check(task_dir, task)
+        ProgressManager.update(request.user, task, success)
 
-            task.is_completed = True
-            task.save()
-
+        profile = request.user.profile
+        if success:
             return Response({
-                "status": "correct ✔ ",
-                "xp": request.user.profile.xp,
-                "level": request.user.profile.level
+                "status": "correct",
+                "xp": profile.xp,
+                "level": profile.level,
             })
 
         return Response({
-            "status": "wrong ❌",
-            "hint": "Try again"
+            "status": "wrong",
+            "hint": "Qayta urinib ko'ring",
         })

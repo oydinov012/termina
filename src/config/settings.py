@@ -23,8 +23,8 @@ else:
     DEBUG = True
 
 
-ALLOWED_HOSTS = env("ALLOWED_HOSTS").split(",")
-#ALLOWED_HOSTS = ["*"]
+# ALLOWED_HOSTS = env("ALLOWED_HOSTS").split(",")
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
@@ -235,5 +235,9 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SAMESITE = "None"
     SESSION_COOKIE_SAMESITE = "None"
+    CSRF_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SAMESITE = "Lax"
 
 
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000

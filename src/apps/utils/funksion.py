@@ -32,6 +32,14 @@ class TerminalEngine:
     # ============================================
     # EXECUTE
     # ============================================
+    '''
+    celery_result = async_check_task.delay(
+    self.user.id, task.id, calculated_workspace_path
+)
+
+# Celery ID ni shu topshiriqqa bog'laymiz
+task.check_job_id = celery_result.id
+task.save(update_fields=["check_job_id"])'''
 
     def execute_command(self, command, content_to_write=""):
         # Split qilishdan oldin umumiy komandani tozalaymiz
@@ -106,7 +114,15 @@ class TerminalEngine:
 
                 # -------------------------------------------------------------
                 # CELERY TASKNI ISHGA TUSHIRAMIZ VA JAVOBINI O'ZGARUVCHIGA OLAMIZ
-                # -------------------------------------------------------------
+
+                celery_result = async_check_task.delay(
+    self.user.id, task.id, calculated_workspace_path
+)
+
+                # Celery ID ni shu topshiriqqa bog'laymiz
+                task.check_job_id = celery_result.id
+                task.save(update_fields=["check_job_id"])
+                                # -------------------------------------------------------------
                 celery_result = async_check_task.delay(self.user.id, task.id, calculated_workspace_path)
                 # -------------------------------------------------------------
 
