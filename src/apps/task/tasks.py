@@ -35,7 +35,7 @@ class TaskEngine:
             description=template.description,
             target_structure=template.target_structure,
             xp=template.xp,
-            status="in_progress"  # Check buyrug'i ishlashi uchun status "in_progress" bo'lishi kerak
+            status="pending"  # `start <id>` buyrug'i uni "in_progress" ga o'tkazadi
         )
 
 
@@ -95,7 +95,6 @@ class ProgressManager:
 
         if success:
             task.status = "completed"
-            task.is_completed = True  # View-ingizdagi flag uchun
             task.completed_at = timezone.now()
             
             profile.xp += task.xp

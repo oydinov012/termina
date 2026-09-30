@@ -1,3 +1,4 @@
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from apps.task.models import Profile
@@ -12,6 +13,15 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'email', 'password')
+
+    def validate_password(self, value):
+        validate_password(value)
+        return value
+
+    def validate_email(self, value):
+        if value and User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("Bu email allaqachon ro'yxatdan o'tgan.")
+        return value
 
     def create(self, validated_data):
         user = User.objects.create_user(

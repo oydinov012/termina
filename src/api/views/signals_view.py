@@ -25,6 +25,7 @@ class CeleryTaskStatusView(APIView):
         }
 
         if result.ready():
+            task.refresh_from_db()
             profile = request.user.profile
             data.update({
                 "task_status": task.status,

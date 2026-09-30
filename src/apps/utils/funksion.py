@@ -5,6 +5,7 @@ from apps.task.models import Task
 from apps.utils.tasks import async_check_task
 
 class TerminalEngine:
+    MAX_FILE_BYTES = 100_000  # bitta fayl uchun maksimal hajm
 
     def __init__(self, workspace):
         self.workspace = workspace
@@ -14,17 +15,19 @@ class TerminalEngine:
     # XAVFSIZ ABSOLUTE PATH
     # ============================================
 
+    def is_inside_root(self, abs_path):
+        root = os.path.abspath(self.workspace.root_dir)
+        try:
+            return os.path.commonpath([root, abs_path]) == root
+        except ValueError:
+            return False
+
     def safe_path(self, path):
         abs_path = os.path.abspath(
-            os.path.join(
-                self.workspace.current_dir,
-                path
-            )
+            os.path.join(self.workspace.current_dir, path)
         )
 
-        if not abs_path.startswith(
-            self.workspace.root_dir
-        ):
+        if not self.is_inside_root(abs_path):
             raise Exception("Ruxsat yo'q!")
 
         return abs_path
@@ -32,14 +35,6 @@ class TerminalEngine:
     # ============================================
     # EXECUTE
     # ============================================
-    '''
-    celery_result = async_check_task.delay(
-    self.user.id, task.id, calculated_workspace_path
-)
-
-# Celery ID ni shu topshiriqqa bog'laymiz
-task.check_job_id = celery_result.id
-task.save(update_fields=["check_job_id"])'''
 
     def execute_command(self, command, content_to_write=""):
         # Split qilishdan oldin umumiy komandani tozalaymiz
@@ -103,34 +98,41 @@ task.save(update_fields=["check_job_id"])'''
                     "file_path": folder_name
                 }
 
-            # Terminal view yoki buyruqni qayta ishlovchi joyingiz
+            # ====================================
+            # CHECK (joriy topshiriq papkasini tekshirish)
+            # ====================================
             elif cmd == "check":
-                task = Task.objects.filter(user=self.user, status="in_progress").first()
+                # Qaysi topshiriq papkasi ichida turganingizga qarab aniqlaymiz
+                rel = os.path.relpath(self.workspace.current_dir, self.workspace.root_dir)
+                match = re.match(r"task_(\d+)_papkasi$", rel.split(os.sep)[0])
+                if not match:
+                    return self.error(
+                        "Avval `start <id>` bilan topshiriqni boshlang va uning papkasida turing."
+                    )
+
+                task = Task.objects.filter(
+                    id=int(match.group(1)),
+                    user=self.user,
+                    status__in=["in_progress", "failed"],
+                ).first()
                 if not task:
-                    return self.error("Hozirda hech qanday faol topshiriq bajarilmayapti.")
+                    return self.error(
+                        "Bu topshiriq faol emas yoki allaqachon bajarilgan. Yangi topshiriq uchun `start <id>` yozing."
+                    )
 
-                expected_folder_name = f"task_{task.id}_papkasi"
-                calculated_workspace_path = os.path.join(self.workspace.root_dir, expected_folder_name)
+                task_path = os.path.join(self.workspace.root_dir, f"task_{task.id}_papkasi")
 
-                # -------------------------------------------------------------
-                # CELERY TASKNI ISHGA TUSHIRAMIZ VA JAVOBINI O'ZGARUVCHIGA OLAMIZ
-
-                celery_result = async_check_task.delay(
-    self.user.id, task.id, calculated_workspace_path
-)
-
-                # Celery ID ni shu topshiriqqa bog'laymiz
+                # Faqat BIR marta yuboramiz va ID ni shu taskka bog'laymiz
+                celery_result = async_check_task.delay(self.user.id, task.id, task_path)
                 task.check_job_id = celery_result.id
                 task.save(update_fields=["check_job_id"])
-                                # -------------------------------------------------------------
-                celery_result = async_check_task.delay(self.user.id, task.id, calculated_workspace_path)
-                # -------------------------------------------------------------
 
                 return {
                     "type": "check_queued",
-                    "celery_task_id": celery_result.id,  # Frontend buni ushlab oladi
-                    "output": "Topshiriq tekshirishga topshirildi... Natija yuklanmoqda."
+                    "celery_task_id": celery_result.id,  # Frontend shu ID bilan holatni so'raydi
+                    "output": "Topshiriq tekshirishga topshirildi... Natija yuklanmoqda.",
                 }
+
             # ====================================
             # PWD
             # ====================================
@@ -225,9 +227,7 @@ task.save(update_fields=["check_job_id"])'''
                 else:
                     new_dir = self.safe_path(args[0])
 
-                if not new_dir.startswith(
-                    self.workspace.root_dir
-                ):
+                if not self.is_inside_root(new_dir):
                     return self.error("Ruxsat yo'q")
 
                 if not os.path.isdir(new_dir):
@@ -251,6 +251,9 @@ task.save(update_fields=["check_job_id"])'''
                     return self.error("Fayl nomi yozilmadi")
 
                 path = self.safe_path(args[0])
+
+                if path == os.path.abspath(self.workspace.root_dir):
+                    return self.error("Bosh papkani o'chirib bo'lmaydi")
 
                 if os.path.isfile(path):
                     os.remove(path)
@@ -304,6 +307,8 @@ task.save(update_fields=["check_job_id"])'''
 
                 # Agar Front-end'dan content kelgan bo'lsa -> Faylni SAQLAYMIZ
                 if content_to_write:
+                    if len(content_to_write.encode("utf-8")) > self.MAX_FILE_BYTES:
+                        return self.error("Fayl juda katta (maksimum 100 KB)")
                     with open(path, "w", encoding="utf-8") as f:
                         f.write(content_to_write)
                     return {

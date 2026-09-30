@@ -2,15 +2,14 @@ services:
   db:
     image: postgres:16-alpine
     container_name: terminal_postgres
-    environment:
-      POSTGRES_DB: terminal_db
-      POSTGRES_USER: terminal_user
-      POSTGRES_PASSWORD: Oydinov012..
+    # POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD src/.env faylidan olinadi
+    env_file:
+      - ./src/.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U terminal_user -d terminal_db"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -18,14 +17,16 @@ services:
   redis:
     image: redis:7.2-alpine
     container_name: terminal_redis
-    command: redis-server --appendonly yes --requirepass Oydinov012..
-    ports:
-      - "127.0.0.1:6379:6379"
+    env_file:
+      - ./src/.env
+    # Parol src/.env dagi REDIS_PASSWORD dan olinadi. Host portiga ochilmaydi,
+    # konteynerlar unga `redis` nomi orqali ichki tarmoqda ulanadi.
+    command: sh -c 'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"'
     volumes:
       - redis_data:/data
     restart: always
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "Oydinov012..", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep PONG"]
       interval: 5s
       timeout: 3s
       retries: 5

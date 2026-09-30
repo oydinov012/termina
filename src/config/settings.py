@@ -16,15 +16,9 @@ SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
-DEBUG = env("DEBUG")
-if DEBUG == "False":
-    DEBUG = False
-else:
-    DEBUG = True
+DEBUG = env.bool("DEBUG", default=False)
 
-
-# ALLOWED_HOSTS = env("ALLOWED_HOSTS").split(",")
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [h.strip() for h in env("ALLOWED_HOSTS").split(",")]
 
 # Application definition
 
@@ -52,6 +46,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
+        "whitenoise.middleware.WhiteNoiseMiddleware",   
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -197,13 +192,25 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        # Production'da fayl nomiga hash qo'shib, brauzer keshini to'g'ri boshqaradi
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.StaticFilesStorage"
+            if DEBUG
+            else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        ),
+    },
+}
 
 # This is a list of additional directories where Django will look for static files 
 # during development (and for collectstatic to copy from).
-if DEBUG:
-    STATICFILES_DIRS = [
-        os.path.join(BASE_DIR, "static"),
-    ]
+_static_dir = os.path.join(BASE_DIR, "static")
+if DEBUG and os.path.isdir(_static_dir):
+    STATICFILES_DIRS = [_static_dir]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -230,14 +237,15 @@ CORS_ALLOWED_ORIGINS = [o.strip() for o in env("CORS_ALLOWED_ORIGINS").split(","
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in env("CSRF_TRUSTED_ORIGINS").split(",")]
 
 if not DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SAMESITE = "None"
-    SESSION_COOKIE_SAMESITE = "None"
     CSRF_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SAMESITE = "Lax"
 
+    # Nginx/proxy orqasida Django HTTPS ekanini shu header orqali biladi
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-    SECURE_SSL_REDIRECT = True
-    SECURE_HSTS_SECONDS = 31536000
+    # Faqat HTTPS sozlangan serverda .env da SECURE_SSL_REDIRECT=True qiling
+    SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=False)
+    if SECURE_SSL_REDIRECT:
+        SECURE_HSTS_SECONDS = 31536000
